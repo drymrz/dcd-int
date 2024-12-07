@@ -1,0 +1,7 @@
+key.json
+*.zip
+.env
+/data-test-submissions
+/node_modules
+package-lock.json
+.DS_Store
