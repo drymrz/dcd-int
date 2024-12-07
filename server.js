@@ -1,14 +1,15 @@
 require("dotenv").config();
 const express = require("express");
+const cors = require("cors");
 const multer = require("multer");
 const crypto = require("crypto");
 const loadModel = require("./services/loadModel");
 const { predict } = require("./services/inferenceService");
 const firestoreService = require("./services/firestoreService");
-const cors = require("cors");
 
 const app = express();
 
+// Aktifkan CORS
 app.use(cors());
 
 // Konfigurasi multer untuk upload gambar
@@ -29,9 +30,7 @@ app.use(async (req, res, next) => {
   if (!model) {
     try {
       model = await loadModel();
-      console.log("Model loaded successfully.");
     } catch (error) {
-      console.error("Failed to load model:", error);
       return res.status(500).json({
         status: "fail",
         message: "Failed to load model",
@@ -52,10 +51,7 @@ app.post("/predict", upload.single("image"), async (req, res) => {
     }
 
     const buffer = req.file.buffer;
-    console.log("Buffer received:", buffer); // Log buffer untuk memastikan file diterima
-
     const { confidenceScore, label, suggestion } = await predict(model, buffer);
-    console.log("Prediction result:", { confidenceScore, label, suggestion });
 
     const id = crypto.randomUUID();
     const createdAt = new Date().toISOString();
@@ -70,7 +66,6 @@ app.post("/predict", upload.single("image"), async (req, res) => {
 
     // Simpan ke Firestore
     await firestoreService.savePrediction(data);
-    console.log("Data saved to Firestore:", data);
 
     return res.status(201).json({
       status: "success",
@@ -78,7 +73,6 @@ app.post("/predict", upload.single("image"), async (req, res) => {
       data,
     });
   } catch (error) {
-    console.error("Error during prediction:", error); // Log detail error
     if (error.message.includes("File too large")) {
       return res.status(413).json({
         status: "fail",
@@ -92,6 +86,7 @@ app.post("/predict", upload.single("image"), async (req, res) => {
   }
 });
 
+// Endpoint untuk mengambil riwayat prediksi
 app.get("/predict/histories", async (req, res) => {
   try {
     const histories = await firestoreService.getPredictionHistories();
@@ -101,7 +96,6 @@ app.get("/predict/histories", async (req, res) => {
       data: histories,
     });
   } catch (error) {
-    console.error("Error fetching histories:", error);
     res.status(500).json({
       status: "fail",
       message: "Terjadi kesalahan saat mengambil data riwayat prediksi.",
@@ -109,26 +103,8 @@ app.get("/predict/histories", async (req, res) => {
   }
 });
 
-// Middleware Error Handler untuk Multer
-app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) {
-    // Handling jika file terlalu besar
-    if (err.code === "LIMIT_FILE_SIZE") {
-      return res.status(413).json({
-        status: "fail",
-        message: "Payload content length greater than maximum allowed: 1000000",
-      });
-    }
-  }
-  // Error umum lainnya
-  res.status(400).json({
-    status: "fail",
-    message: err.message || "An unexpected error occurred",
-  });
-});
-
 const PORT = process.env.PORT || 3000;
-const HOST = "0.0.0.0"; // Ganti localhost menjadi 0.0.0.0
+const HOST = "0.0.0.0";
 
 app.listen(PORT, HOST, () => {
   console.log(`Server running on http://${HOST}:${PORT}`);

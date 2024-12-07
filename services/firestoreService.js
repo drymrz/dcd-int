@@ -6,13 +6,12 @@ const firestore = new Firestore({
     private_key: process.env.FIRESTORE_PRIVATE_KEY.replace(/\\n/g, "\n"),
     client_email: process.env.FIRESTORE_CLIENT_EMAIL,
   },
-  databaseId: "mlgc-db", // Jika kamu menggunakan databaseId khusus
+  databaseId: "mlgc-db",
 });
 
 const savePrediction = async (data) => {
   const collection = firestore.collection("prediction");
   await collection.doc(data.id).set(data);
-  console.log("Prediction saved to Firestore:", data);
 };
 
 const getPredictionHistories = async () => {
