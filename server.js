@@ -5,8 +5,11 @@ const crypto = require("crypto");
 const loadModel = require("./services/loadModel");
 const { predict } = require("./services/inferenceService");
 const firestoreService = require("./services/firestoreService");
+const cors = require("cors");
 
 const app = express();
+
+app.use(cors());
 
 // Konfigurasi multer untuk upload gambar
 const upload = multer({
