@@ -2,16 +2,20 @@ const tf = require("@tensorflow/tfjs-node");
 
 const predict = async (model, imageBuffer) => {
   try {
+    console.log("Loading image buffer into tensor...");
     const tensor = tf.node
       .decodeImage(imageBuffer)
-      .resizeNearestNeighbor([224, 224]) // Sesuaikan ukuran input model
+      .resizeNearestNeighbor([224, 224]) // Resize sesuai model
       .expandDims()
       .toFloat();
 
+    console.log("Tensor created:", tensor.shape);
+
     const prediction = model.predict(tensor);
     const score = await prediction.data();
-    const confidenceScore = score[0]; // Skor pertama untuk binary classification
+    console.log("Raw prediction score:", score);
 
+    const confidenceScore = score[0];
     let label, suggestion;
 
     if (confidenceScore > 0.5) {
@@ -22,10 +26,11 @@ const predict = async (model, imageBuffer) => {
       suggestion = "Penyakit kanker tidak terdeteksi.";
     }
 
+    console.log("Prediction result:", { confidenceScore, label, suggestion });
     return { confidenceScore: confidenceScore * 100, label, suggestion };
   } catch (error) {
-    console.error("Error during prediction:", error);
-    throw new Error("Terjadi kesalahan dalam melakukan prediksi.");
+    console.error("Error during tensor processing or prediction:", error);
+    throw new Error("Prediction failed");
   }
 };
 

@@ -39,7 +39,7 @@ app.use(async (req, res, next) => {
 });
 
 // Endpoint untuk prediksi
-app.post("/predict", upload.single("image"), async (req, res, next) => {
+app.post("/predict", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -49,7 +49,10 @@ app.post("/predict", upload.single("image"), async (req, res, next) => {
     }
 
     const buffer = req.file.buffer;
+    console.log("Buffer received:", buffer); // Log buffer untuk memastikan file diterima
+
     const { confidenceScore, label, suggestion } = await predict(model, buffer);
+    console.log("Prediction result:", { confidenceScore, label, suggestion });
 
     const id = crypto.randomUUID();
     const createdAt = new Date().toISOString();
@@ -64,6 +67,7 @@ app.post("/predict", upload.single("image"), async (req, res, next) => {
 
     // Simpan ke Firestore
     await firestoreService.savePrediction(data);
+    console.log("Data saved to Firestore:", data);
 
     return res.status(201).json({
       status: "success",
@@ -71,7 +75,7 @@ app.post("/predict", upload.single("image"), async (req, res, next) => {
       data,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error during prediction:", error); // Log detail error
     if (error.message.includes("File too large")) {
       return res.status(413).json({
         status: "fail",
@@ -81,6 +85,23 @@ app.post("/predict", upload.single("image"), async (req, res, next) => {
     return res.status(400).json({
       status: "fail",
       message: "Terjadi kesalahan dalam melakukan prediksi",
+    });
+  }
+});
+
+app.get("/predict/histories", async (req, res) => {
+  try {
+    const histories = await firestoreService.getPredictionHistories();
+
+    res.status(200).json({
+      status: "success",
+      data: histories,
+    });
+  } catch (error) {
+    console.error("Error fetching histories:", error);
+    res.status(500).json({
+      status: "fail",
+      message: "Terjadi kesalahan saat mengambil data riwayat prediksi.",
     });
   }
 });

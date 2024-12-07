@@ -15,4 +15,23 @@ const savePrediction = async (data) => {
   console.log("Prediction saved to Firestore:", data);
 };
 
-module.exports = { savePrediction };
+const getPredictionHistories = async () => {
+  const collection = firestore.collection("prediction");
+  const snapshot = await collection.get();
+
+  if (snapshot.empty) {
+    return [];
+  }
+
+  const histories = [];
+  snapshot.forEach((doc) => {
+    histories.push({
+      id: doc.id,
+      history: doc.data(),
+    });
+  });
+
+  return histories;
+};
+
+module.exports = { savePrediction, getPredictionHistories };
