@@ -51,7 +51,7 @@ app.post("/predict", upload.single("image"), async (req, res) => {
     }
 
     const buffer = req.file.buffer;
-    const { confidenceScore, label, suggestion } = await predict(model, buffer);
+    const { label, suggestion } = await predict(model, buffer);
 
     const id = crypto.randomUUID();
     const createdAt = new Date().toISOString();
@@ -60,7 +60,6 @@ app.post("/predict", upload.single("image"), async (req, res) => {
       id,
       result: label,
       suggestion,
-      confidenceScore,
       createdAt,
     };
 
@@ -73,12 +72,6 @@ app.post("/predict", upload.single("image"), async (req, res) => {
       data,
     });
   } catch (error) {
-    if (error.message.includes("File too large")) {
-      return res.status(413).json({
-        status: "fail",
-        message: "Payload content length greater than maximum allowed: 1000000",
-      });
-    }
     return res.status(400).json({
       status: "fail",
       message: "Terjadi kesalahan dalam melakukan prediksi",
@@ -101,6 +94,29 @@ app.get("/predict/histories", async (req, res) => {
       message: "Terjadi kesalahan saat mengambil data riwayat prediksi.",
     });
   }
+});
+
+// Middleware Error Handler untuk Multer dan Error Umum
+app.use((err, req, res, next) => {
+  // Tangkap MulterError untuk file terlalu besar
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(413).json({
+        status: "fail",
+        message: "Payload content length greater than maximum allowed: 1000000",
+      });
+    }
+  }
+
+  // Tangkap error lainnya
+  if (err) {
+    return res.status(err.status || 500).json({
+      status: "fail",
+      message: err.message || "Terjadi kesalahan pada server.",
+    });
+  }
+
+  next();
 });
 
 const PORT = process.env.PORT || 3000;

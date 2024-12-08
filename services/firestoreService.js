@@ -6,16 +6,16 @@ const firestore = new Firestore({
     private_key: process.env.FIRESTORE_PRIVATE_KEY.replace(/\\n/g, "\n"),
     client_email: process.env.FIRESTORE_CLIENT_EMAIL,
   },
-  databaseId: "mlgc-db",
+  databaseId: "(default)",
 });
 
 const savePrediction = async (data) => {
-  const collection = firestore.collection("prediction");
+  const collection = firestore.collection("predictions");
   await collection.doc(data.id).set(data);
 };
 
 const getPredictionHistories = async () => {
-  const collection = firestore.collection("prediction");
+  const collection = firestore.collection("predictions");
   const snapshot = await collection.get();
 
   if (snapshot.empty) {

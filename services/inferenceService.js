@@ -17,7 +17,7 @@ const predict = async (model, imageBuffer) => {
       ? "Segera periksa ke dokter!"
       : "Penyakit kanker tidak terdeteksi.";
 
-  return { confidenceScore: confidenceScore * 100, label, suggestion };
+  return { label, suggestion };
 };
 
 module.exports = { predict };
